@@ -1,0 +1,94 @@
+
+public class Multiple_Operator {
+
+	public static int eval(final String str) {
+	    class Parsing {
+	        int pos = -1, c;
+
+	        void removeChar() {
+	            c = (++pos < str.length()) ? str.charAt(pos) : -1;
+	        }
+
+	        void RemoveSpace() {
+	            while (Character.isWhitespace(c)) removeChar();
+	        }
+
+	        double parsing() {
+	            removeChar();
+	            double v = parserExpression();
+	            if (c != -1) throw new RuntimeException("Unexpected: " + (char)c);
+	            return v;
+	        }
+
+	        // Grammar:
+	        // expression = term | expression `+` term | expression `-` term
+	        // term = factor | term `*` factor | term `/` factor | term brackets
+	        // factor = brackets | number | factor `^` factor
+	        // brackets = `(` expression `)`
+
+	        double parserExpression() {
+	            double v = parseTerm();
+	            for (;;) {
+	                RemoveSpace();
+	                if (c == '+') { // addition
+	                    removeChar();
+	                    v += parseTerm();
+	                } else if (c == '-') { // subtraction
+	                    removeChar();
+	                    v -= parseTerm();
+	                } else {
+	                    return v;
+	                }
+	            }
+	        }
+
+	        double parseTerm() {
+	            double v = parseFactor();
+	            for (;;) {
+	                RemoveSpace();
+	                if (c == '/') { // division
+	                    removeChar();
+	                    v /= parseFactor();
+	                } else if (c == '*' || c == '(') { // multiplication
+	                    if (c == '*') removeChar();
+	                    v *= parseFactor();
+	                } else {
+	                    return v;
+	                }
+	            }
+	        }
+
+	        double parseFactor() {
+	            double v;
+	            boolean negate = false;
+	            RemoveSpace();
+	            if (c == '(') { // brackets
+	                removeChar();
+	                v = parserExpression();
+	                if (c == ')') removeChar();
+	            } else { // numbers
+	                if (c == '+' || c == '-') { // unary plus & minus
+	                    negate = c == '-';
+	                    removeChar();
+	                    RemoveSpace();
+	                }
+	                StringBuilder sb = new StringBuilder();
+	                while ((c >= '0' && c <= '9') || c == '.') {
+	                    sb.append((char)c);
+	                    removeChar();
+	                }
+	                if (sb.length() == 0) throw new RuntimeException("Unexpected: " + (char)c);
+	                v = Double.parseDouble(sb.toString());
+	            }
+	            RemoveSpace();
+	            if (c == '^') { // exponentiation
+	                removeChar();
+	                v = Math.pow(v, parseFactor());
+	            }
+	            if (negate) v = -v; // exponentiation has higher priority than unary minus: -3^2=-9
+	            return v;
+	        }
+	    }
+	    return (int) new Parsing().parsing();
+	}
+}
